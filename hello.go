@@ -12,14 +12,6 @@ type Node struct {
 	NodeIdentifier int
 }
 
-type Message struct {
-	Do             string	`json:"do"`
-	Sponsoringnode int		`json:"sponsoring-node"`
-	Mode           int		`json:"mode"`
-	Respondto      string	`json:"respond-to"`
-}
-
-
 var chrodRingNodes = []*Node{}
 var nodeChannelmap = make(map[int]chan Message)
 
@@ -53,6 +45,8 @@ func main() {
 	
 	go nodeFunc(nodeChannelmap[message.Sponsoringnode], results)
 	ch := nodeChannelmap[message.Sponsoringnode]
+	
+	//Everytime a message is sent to the channel the nodeFunc goroutine is invoked
 	ch <- message
 	
 	jsonMessage1 := string(`{"do": "join-ring","sponsoring-node":3, "mode": 5}`)
@@ -111,7 +105,6 @@ func makeNode(msg Message) {
 	nodeChannelmap[ringPos] = make(chan Message)
 }
 
-//Function used to get the successor and predecessor nodes given the position in ring of the node and the sponsoring node
 func findSuccessorAndPredecessorForJoin(ringPos int, sponsoringNode Node) (*Node, *Node, Node) {
 
 	succNode := Node{}
