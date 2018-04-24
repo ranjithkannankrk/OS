@@ -111,7 +111,6 @@ func makeNode(msg Message) {
 	nodeChannelmap[ringPos] = make(chan Message)
 }
 
-//Function used to get the successor and predecessor nodes given the position in ring of the node and the sponsoring node
 func findSuccessorAndPredecessorForJoin(ringPos int, sponsoringNode Node) (*Node, *Node, Node) {
 
 	succNode := Node{}
