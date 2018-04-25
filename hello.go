@@ -1,7 +1,6 @@
 package main
 import (
 	"fmt"
-	"encoding/json"
 )
 
 type Node struct {
@@ -12,136 +11,208 @@ type Node struct {
 	NodeIdentifier int
 }
 
-type Message struct {
-	Do             string	`json:"do"`
-	Sponsoringnode int		`json:"sponsoring-node"`
-	Mode           int		`json:"mode"`
-	Respondto      string	`json:"respond-to"`
-}
-
-
-var chrodRingNodes = []*Node{}
-var nodeChannelmap = make(map[int]chan Message)
+var nodeChannelmap = make(map[int] Node)
 
 
 func main() {
 
-
-	results := make(chan int, 100)
-	var chans [6]chan Message
-	for i := range chans {
-		chans[i] = make(chan Message)
-	}
-
-
-    fmt.Println("hello world")
 	ringPos := 1
-	if(len(chrodRingNodes) == 0) {
+	if(len(nodeChannelmap) == 0) {
 		node := Node{}
 		node.NodeIdentifier = ringPos
 		node.Successor = &node
 		node.Predecessor = &node
 		node.KeyValue = make(map[int]int)
-		chrodRingNodes = append(chrodRingNodes, &node)
-		nodeChannelmap[ringPos] = chans[0]
+		nodeChannelmap[ringPos] = node
 	}
 	
 	
-	jsonMessage := string(`{"do": "join-ring","sponsoring-node":1, "mode": 3}`)
-    message := Message{}
-    json.Unmarshal([]byte(jsonMessage), &message)
-	
-	go nodeFunc(nodeChannelmap[message.Sponsoringnode], results)
-	ch := nodeChannelmap[message.Sponsoringnode]
-	
-	//Everytime a message is sent to the channel the nodeFunc goroutine is invoked
-	ch <- message
-	
-	jsonMessage1 := string(`{"do": "join-ring","sponsoring-node":3, "mode": 5}`)
-    message1 := Message{}
-    json.Unmarshal([]byte(jsonMessage1), &message1)
-	ch1 := nodeChannelmap[message.Sponsoringnode]
-	ch1 <- message1
-}
-
-//function used to perform all the node operations
-func nodeFunc(jobs <-chan Message, results chan<- int) {
-	for j := range jobs {
-		fmt.Println("check")
-		fmt.Println(j)
-		
-		//snippet invoked when the node operation is join
-		if("join-ring" == j.Do) {
-			makeNode(j)
-			
-			//recursively call the node operation function for the respective channel
-			go nodeFunc(nodeChannelmap[j.Mode], results)
-		}
-		fmt.Println(len(nodeChannelmap))
-		results <- 1
-	}
-}
-
-//function used to create a new node in the chord ring and also updates the successor and predecessor of the node to be inserted as well as the affected nodes
-func makeNode(msg Message) {
-	ringPos := msg.Mode
+	ringPos = 3
+	sponsoringNodeId := 1
 	newNode := Node{}
-	startNode := Node{}
+	startNodes := Node{}
+	successor := Node{}
+	predecessor := Node{}
 	newNode.NodeIdentifier = ringPos
-	sponsoringNode := Node{}
-	for _, element := range chrodRingNodes {
-		if(msg.Sponsoringnode == element.NodeIdentifier) {
-			sponsoringNode = *element
-			}
+	sponsoringNode := nodeChannelmap[sponsoringNodeId]
+	
+	successor, predecessor, startNodes = findSuccessorAndPredecessor(ringPos, sponsoringNode)
+	newNode.Successor = &successor
+	newNode.Predecessor = &predecessor
+	
+	if(ringPos > sponsoringNode.NodeIdentifier) {
+		if(len(nodeChannelmap) == 1) {
+			startNodes.Successor = &newNode
+			startNodes.Predecessor = &newNode
 		}
-		newNode.Successor, newNode.Predecessor, startNode = findSuccessorAndPredecessorForJoin(ringPos, sponsoringNode)
-		
-		//snippet used to update the successor and predecessor of the nodes which were disturbed when a new node was brought inside
-		if(ringPos < msg.Sponsoringnode) {
-			startNode.Successor.Predecessor = &newNode
+	}
+	nodeChannelmap[ringPos] = newNode
+	nodeChannelmap[startNodes.NodeIdentifier] = startNodes
+	
+	ringPos1 := 6
+	sponsoringNodeId1 := 1
+	newNode1 := Node{}
+	startNode1 := Node{}
+	successor1 := Node{}
+	predecessor1 := Node{}
+	newNode1.NodeIdentifier = ringPos1
+	sponsoringNode1 := nodeChannelmap[sponsoringNodeId1]
+	
+	successor1, predecessor1, startNode1 = findSuccessorAndPredecessor(ringPos1, sponsoringNode1)
+	newNode1.Successor = &successor1
+	newNode1.Predecessor = &predecessor1
+	
+	updateMap(newNode1, startNode1, sponsoringNode1, ringPos1)	
+	
+	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
+	
+	
+	ringPos2 := 5
+	sponsoringNodeId2 := 1
+	newNode2 := Node{}
+	startNode2 := Node{}
+	successor2 := Node{}
+	predecessor2 := Node{}
+	newNode2.NodeIdentifier = ringPos2
+	sponsoringNode2 := nodeChannelmap[sponsoringNodeId2]
+	
+	successor2, predecessor2, startNode2 = findSuccessorAndPredecessor(ringPos2, sponsoringNode2)
+	newNode2.Successor = &successor2
+	newNode2.Predecessor = &predecessor2
+	
+	fmt.Println(newNode2.NodeIdentifier, newNode2.Successor.NodeIdentifier, newNode2.Predecessor.NodeIdentifier,startNode2.NodeIdentifier)
+	
+	updateMap(newNode2, startNode2, sponsoringNode2, ringPos2)
+	
+	fmt.Println(nodeChannelmap[3].NodeIdentifier, nodeChannelmap[3].Successor.NodeIdentifier, nodeChannelmap[3].Predecessor.NodeIdentifier)
+	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
+	
+	ringPos3 := 4
+	sponsoringNodeId3 := 1
+	newNode3 := Node{}
+	startNode3 := Node{}
+	successor3 := Node{}
+	predecessor3 := Node{}
+	newNode3.NodeIdentifier = ringPos3
+	sponsoringNode3 := nodeChannelmap[sponsoringNodeId3]
+	
+	successor3, predecessor3, startNode3 = findSuccessorAndPredecessor(ringPos3, sponsoringNode3)
+	newNode3.Successor = &successor3
+	newNode3.Predecessor = &predecessor3
+
+	fmt.Println(newNode3.NodeIdentifier, newNode3.Successor.NodeIdentifier, newNode3.Predecessor.NodeIdentifier,startNode3.NodeIdentifier)
+	
+	updateMap(newNode3, startNode3, sponsoringNode3, ringPos3)
+	
+	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
+	
+	ringPos4 := 2
+	sponsoringNodeId4 := 5
+	newNode4 := Node{}
+	startNode4 := Node{}
+	successor4 := Node{}
+	predecessor4 := Node{}
+	newNode4.NodeIdentifier = ringPos4
+	sponsoringNode4 := nodeChannelmap[sponsoringNodeId4]
+	
+	successor4, predecessor4, startNode4 = findSuccessorAndPredecessor(ringPos4, sponsoringNode4)
+	newNode4.Successor = &successor4
+	newNode4.Predecessor = &predecessor4
+	
+	fmt.Println(newNode4.NodeIdentifier, newNode4.Successor.NodeIdentifier, newNode4.Predecessor.NodeIdentifier,startNode4.NodeIdentifier)
+	
+	updateMap(newNode4, startNode4, sponsoringNode4, ringPos4)
+	
+	fmt.Println(nodeChannelmap[3].NodeIdentifier, nodeChannelmap[3].Successor.NodeIdentifier, nodeChannelmap[3].Predecessor.NodeIdentifier)
+	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
+	
+}
+
+func updateMap(newNode Node, startNode Node, sponsoringNode Node, ringPos int) {
+
+	if(ringPos > sponsoringNode.NodeIdentifier) {
+		if(len(nodeChannelmap) == 1) {
 			startNode.Successor = &newNode
-		}
-		if(ringPos > msg.Sponsoringnode) {
-			startNode.Predecessor.Successor = &newNode
 			startNode.Predecessor = &newNode
 		}
+		if(startNode.Successor.NodeIdentifier < ringPos) {
+			if(ringPos < startNode.NodeIdentifier) {
+				updateNode := nodeChannelmap[startNode.Predecessor.NodeIdentifier]
+				updateNode.Successor = &newNode
+				nodeChannelmap[updateNode.NodeIdentifier] = updateNode
+				startNode.Predecessor = &newNode
+				
+			} else {
+				updateNode := nodeChannelmap[startNode.Successor.NodeIdentifier]
+				updateNode.Predecessor = &newNode
+				nodeChannelmap[updateNode.NodeIdentifier] = updateNode
+				startNode.Successor = &newNode
+			}
+		}
+		if(ringPos < startNode.NodeIdentifier) {
+			updateNode := nodeChannelmap[startNode.Predecessor.NodeIdentifier]
+			updateNode.Successor = &newNode
+			nodeChannelmap[updateNode.NodeIdentifier] = updateNode
+			startNode.Predecessor = &newNode
+		}
+	}
+	if(ringPos < sponsoringNode.NodeIdentifier) {
+		updateNode := nodeChannelmap[startNode.Successor.NodeIdentifier]
+		updateNode.Predecessor = &newNode
+		nodeChannelmap[updateNode.NodeIdentifier] = updateNode
+		startNode.Successor = &newNode
+	}
 	
-	//add the newly created node to the global dictionary
-	chrodRingNodes = append(chrodRingNodes, &newNode)
-	
-	//Assign a channel to the newly created node
-	nodeChannelmap[ringPos] = make(chan Message)
+	nodeChannelmap[ringPos] = newNode
+	nodeChannelmap[startNode.NodeIdentifier] = startNode
 }
 
-func findSuccessorAndPredecessorForJoin(ringPos int, sponsoringNode Node) (*Node, *Node, Node) {
 
-	succNode := Node{}
-	predNode := Node{}
+func findSuccessorAndPredecessor(ringPos int, sponsoringNode Node) (Node, Node, Node) {
+	
 	startNode := sponsoringNode
 	
-	if(ringPos < sponsoringNode.NodeIdentifier) {
-		startNode := sponsoringNode.Predecessor
-		for {
-			if( ringPos < startNode.NodeIdentifier) {
-				succNode = *startNode.Successor
-				predNode = *startNode
-				break
-			} else {
-				startNode = startNode.Predecessor
-			}
-		}
-	}
 	if(ringPos > sponsoringNode.NodeIdentifier) {
-		startNode := sponsoringNode.Successor
-		for {
-			if( ringPos > startNode.NodeIdentifier) {
-				succNode = *startNode
-				predNode = *startNode.Predecessor
-				break
+	i := 1
+	for{
+		if(len(nodeChannelmap) == 1) {
+			succNode := sponsoringNode
+			predNode := sponsoringNode
+			return succNode, predNode, sponsoringNode
+			break
+			}
+		if(i == len(nodeChannelmap)) {
+			if(ringPos < startNode.NodeIdentifier){
+				succNode := startNode
+				predNode := *startNode.Predecessor
+				return succNode, predNode, startNode
 			} else {
-				startNode = startNode.Successor
+				succNode := *startNode.Successor
+				predNode := startNode
+				return succNode, predNode, startNode
 			}
 		}
+		if(ringPos < startNode.NodeIdentifier){
+				succNode := startNode
+				predNode := *startNode.Predecessor
+				return succNode, predNode, startNode
+		}
+		startNode = nodeChannelmap[startNode.Successor.NodeIdentifier]
+		i = i + 1
+		}
 	}
-	return &succNode, &predNode, startNode
+	if(ringPos < sponsoringNode.NodeIdentifier) {
+		
+		for {
+			if(ringPos > startNode.NodeIdentifier) {
+				succNode := *startNode.Successor
+				predNode := startNode
+				return succNode, predNode, startNode
+			}
+			startNode = nodeChannelmap[startNode.Predecessor.NodeIdentifier]
+		}
+		
+	}
+	
+	return sponsoringNode, sponsoringNode, sponsoringNode
 }
