@@ -12,6 +12,14 @@ type Node struct {
 	NodeIdentifier int
 }
 
+type Message struct {
+	Do             string	`json:"do"`
+	Sponsoringnode int		`json:"sponsoring-node"`
+	Mode           int		`json:"mode"`
+	Respondto      string	`json:"respond-to"`
+}
+
+
 var chrodRingNodes = []*Node{}
 var nodeChannelmap = make(map[int]chan Message)
 
