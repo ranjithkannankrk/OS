@@ -68,6 +68,12 @@ func main() {
 }
 
 func nodeFunc(ringPos int, sponsoringNodeId int) {
+	
+	joinNode(ringPos, sponsoringNodeId)
+}
+
+func joinNode(ringPos int, sponsoringNodeId int) {
+
 	newNode := Node{}
 	startNode := Node{}
 	successor := Node{}
@@ -80,6 +86,7 @@ func nodeFunc(ringPos int, sponsoringNodeId int) {
 	newNode.Predecessor = &predecessor
 	
 	updateMap(newNode, startNode, sponsoringNode, ringPos)
+
 }
 
 func updateMap(newNode Node, startNode Node, sponsoringNode Node, ringPos int) {
