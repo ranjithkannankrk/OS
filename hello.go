@@ -1,6 +1,7 @@
 package main
 import (
 	"fmt"
+	"math/rand"
 )
 
 type Node struct {
@@ -34,42 +35,27 @@ func main() {
 		nodeChannelmap[ringPos] = node
 	}
 	
+	action := "join-ring"
+	for i := 0; i < 5; i++ {
+		if(action == "join-ring") {
+			message := Message{}
+			message.Do = action
+			message.Mode, message.Sponsoringnode = getRandomRingPosAndRandomSponsoringNode()
+			nodeFunc(message)
+		}
+	}
 	
-	ringPos = 3
-	sponsoringNodeId := 1
-	nodeFunc(ringPos, sponsoringNodeId)
-	
-	ringPos1 := 6
-	sponsoringNodeId1 := 1
-	nodeFunc(ringPos1, sponsoringNodeId1)
-	
-	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
-	
-	ringPos2 := 5
-	sponsoringNodeId2 := 1
-	nodeFunc(ringPos2, sponsoringNodeId2)
-	
-	fmt.Println(nodeChannelmap[3].NodeIdentifier, nodeChannelmap[3].Successor.NodeIdentifier, nodeChannelmap[3].Predecessor.NodeIdentifier)
-	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
-	
-	ringPos3 := 4
-	sponsoringNodeId3 := 1
-	nodeFunc(ringPos3, sponsoringNodeId3)
-	
-	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
-	
-	ringPos4 := 2
-	sponsoringNodeId4 := 5
-	nodeFunc(ringPos4, sponsoringNodeId4)
-	
-	fmt.Println(nodeChannelmap[3].NodeIdentifier, nodeChannelmap[3].Successor.NodeIdentifier, nodeChannelmap[3].Predecessor.NodeIdentifier)
-	fmt.Println(nodeChannelmap[1].NodeIdentifier, nodeChannelmap[1].Successor.NodeIdentifier, nodeChannelmap[1].Predecessor.NodeIdentifier)
+	for k := range nodeChannelmap {
+		fmt.Println(nodeChannelmap[k].NodeIdentifier, nodeChannelmap[k].Successor.NodeIdentifier, nodeChannelmap[k].Predecessor.NodeIdentifier)
+	}
 	
 }
 
-func nodeFunc(ringPos int, sponsoringNodeId int) {
+func nodeFunc(message Message) {
 	
-	joinNode(ringPos, sponsoringNodeId)
+	if("join-ring" == message.Do) {
+		joinNode(message.Mode, message.Sponsoringnode)
+	}
 }
 
 func joinNode(ringPos int, sponsoringNodeId int) {
@@ -176,4 +162,30 @@ func findSuccessorAndPredecessor(ringPos int, sponsoringNode Node) (Node, Node, 
 	}
 	
 	return sponsoringNode, sponsoringNode, sponsoringNode
+}
+
+func getRandomRingPosAndRandomSponsoringNode() (int, int) {
+	
+	randPos := 1
+	randSponsor := 1
+	
+	for {
+		randPos = rand.Intn(9) + 1
+		for k := range nodeChannelmap {
+			if(randPos == k) {
+				randPos = rand.Intn(9) + 1
+			}
+		}
+		if(randPos > 0) {
+			break
+		}
+	}
+	
+	for k := range nodeChannelmap {
+		randSponsor = k
+		if(k != 0) {
+			break
+		}
+	}
+	return randPos, randSponsor
 }
