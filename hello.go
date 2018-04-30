@@ -3,7 +3,6 @@ import (
 	"math/rand"
 	"time"
 	"sync"
-	"fmt"
 )
 
 type Node struct {
@@ -37,15 +36,9 @@ func main() {
 		node.Successor = &node
 		node.Predecessor = &node
 		node.KeyValue = make(map[int]int)
-		mutex.Lock()
 		nodeChannelmap[ringPos] = node
-		mutex.Unlock()
-		mutex.Lock()
 		nodeChannelVarMap[ringPos] = make(chan Message)
-		mutex.Unlock()
-		mutex.Lock()
 		go nodeFunc(nodeChannelVarMap[ringPos], results)
-		mutex.Unlock()
 	}
 	
 	
@@ -62,11 +55,6 @@ func main() {
 			mutex.Unlock()
 			ch <- message	// for the chosen sponsoring node the request is sent and the respective go routine for the node is invoked when the message is inserted in the channel
 		}
-	}
-	
-	time.Sleep(100 * time.Second)
-	for k := range nodeChannelmap {
-		fmt.Println(nodeChannelmap[k].NodeIdentifier, nodeChannelmap[k].Successor.NodeIdentifier, nodeChannelmap[k].Predecessor.NodeIdentifier)
 	}
 	
 }
