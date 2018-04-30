@@ -1,7 +1,9 @@
 package main
 import (
-	"fmt"
 	"math/rand"
+	"time"
+	"sync"
+	"fmt"
 )
 
 type Node struct {
@@ -21,43 +23,71 @@ type Message struct {
 }
 
 var nodeChannelmap = make(map[int] Node)
+var nodeChannelVarMap = make(map[int]chan Message)
+var mutex = &sync.Mutex{}
 
 
 func main() {
 
-	ringPos := 1
+	results := make(chan int, 100)
 	if(len(nodeChannelmap) == 0) {
+		ringPos := 1
 		node := Node{}
 		node.NodeIdentifier = ringPos
 		node.Successor = &node
 		node.Predecessor = &node
 		node.KeyValue = make(map[int]int)
+		mutex.Lock()
 		nodeChannelmap[ringPos] = node
+		mutex.Unlock()
+		mutex.Lock()
+		nodeChannelVarMap[ringPos] = make(chan Message)
+		mutex.Unlock()
+		mutex.Lock()
+		go nodeFunc(nodeChannelVarMap[ringPos], results)
+		mutex.Unlock()
 	}
+	
 	
 	action := "join-ring"
 	for i := 0; i < 5; i++ {
 		if(action == "join-ring") {
 			message := Message{}
 			message.Do = action
+			mutex.Lock()
 			message.Mode, message.Sponsoringnode = getRandomRingPosAndRandomSponsoringNode()
-			nodeFunc(message)
+			mutex.Unlock()
+			mutex.Lock()
+			ch := nodeChannelVarMap[message.Sponsoringnode]
+			mutex.Unlock()
+			ch <- message	// for the chosen sponsoring node the request is sent and the respective go routine for the node is invoked when the message is inserted in the channel
 		}
 	}
 	
+	time.Sleep(100 * time.Second)
 	for k := range nodeChannelmap {
 		fmt.Println(nodeChannelmap[k].NodeIdentifier, nodeChannelmap[k].Successor.NodeIdentifier, nodeChannelmap[k].Predecessor.NodeIdentifier)
 	}
 	
 }
 
-func nodeFunc(message Message) {
-	
-	if("join-ring" == message.Do) {
-		joinNode(message.Mode, message.Sponsoringnode)
+//function which is used to perform node operations, this will be invoked as a go routine
+func nodeFunc(jobs <-chan Message, results chan<- int) {
+	for j := range jobs {
+		if("join-ring" == j.Do) {
+			mutex.Lock()
+			joinNode(j.Mode, j.Sponsoringnode)
+			mutex.Unlock()
+			mutex.Lock()
+			go nodeFunc(nodeChannelVarMap[j.Mode], results)	//recursively call the nodeFunc function for the respective node as a go routine when a new node joins the system
+			mutex.Unlock()
+		}
+		results <- 1
 	}
+	time.Sleep(100 * time.Second)
 }
 
+//This function is invoked when the action is for a node to join the system
 func joinNode(ringPos int, sponsoringNodeId int) {
 
 	newNode := Node{}
@@ -72,9 +102,11 @@ func joinNode(ringPos int, sponsoringNodeId int) {
 	newNode.Predecessor = &predecessor
 	
 	updateMap(newNode, startNode, sponsoringNode, ringPos)
+	nodeChannelVarMap[ringPos] = make(chan Message)
 
 }
 
+// This function updates the successor and predecessor of the neighboring nodes when a new node joins the system
 func updateMap(newNode Node, startNode Node, sponsoringNode Node, ringPos int) {
 
 	if(ringPos > sponsoringNode.NodeIdentifier) {
@@ -114,7 +146,8 @@ func updateMap(newNode Node, startNode Node, sponsoringNode Node, ringPos int) {
 	nodeChannelmap[startNode.NodeIdentifier] = startNode
 }
 
-
+//function used to find the successor and predecessor if a node, where ringpos is the node identifier for which 
+//the successor and predecessor is to be found
 func findSuccessorAndPredecessor(ringPos int, sponsoringNode Node) (Node, Node, Node) {
 	
 	startNode := sponsoringNode
@@ -164,6 +197,7 @@ func findSuccessorAndPredecessor(ringPos int, sponsoringNode Node) (Node, Node, 
 	return sponsoringNode, sponsoringNode, sponsoringNode
 }
 
+//function used to get a random ring position for the node to join and also to randomly choose a sponsoring node
 func getRandomRingPosAndRandomSponsoringNode() (int, int) {
 	
 	randPos := 1
