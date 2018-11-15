@@ -1,6 +1,8 @@
 # OS
 Chord nodes are implemented as goroutines in the GoLang. Each node has a randomly assigned GoLang channel variable for receiving messages from other nodes. Each channel has a unique (string) identifier; a node uses its channel's id as its own identifier. Further, each node maintains a bucket (list of) (key,value) pairs of a hash table that is distributed among the nodes that are members of the Chord ring. There is no limit on a node's bucket size besides the available memory to GoLang processes, while the keys and values are assumed to be strings. 
+
 The GoLang routine (aka coordinator) spawns some Chord nodes, and then, instructs them to join/leave the Chord ring, as well as get/put/remove key-value pairs from/to the distributed hash table.
+
 Chord nodes reveive JSON request messages from the coordinator or other Chord nodes and respond to the specified response channel directly. We assume the time it takes a node to respond to any message is a random variable. The JSON request messages among the Chord nodes and the coordinator are as follows:
 
 {"do": "join-ring", "sponsoring-node": "channel-id" } instructing the receipient node to join the Chord ring by contacting the (existing) Chord sponsoring node listening on the given channel.
