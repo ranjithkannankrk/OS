@@ -6,14 +6,25 @@ The GoLang routine (aka coordinator) spawns some Chord nodes, and then, instruct
 Chord nodes reveive JSON request messages from the coordinator or other Chord nodes and respond to the specified response channel directly. We assume the time it takes a node to respond to any message is a random variable. The JSON request messages among the Chord nodes and the coordinator are as follows:
 
 {"do": "join-ring", "sponsoring-node": "channel-id" } instructing the receipient node to join the Chord ring by contacting the (existing) Chord sponsoring node listening on the given channel.
+
 {"do": "leave-ring" "mode": "immediate or orderly"} instructing the receipient node to leave the ring immediately (without informing any other nodes) or in an orderly manner (by informing other nodes and transferring its bucket contents to others)
+
 {"do": "stabilize-ring" }
+
 {"do": "init-ring-fingers" }
+
 {"do": "fix-ring-fingers" }
+
 {"do": "ring-notify", "respond-to": "channel-id" }
+
 {"do": "get-ring-fingers", "respond-to": "channel-id" }
+
 {"do": "find-ring-successor", "respond-to": "channel-id"}
+
 {"do": "find-ring-predecessor", "respond-to": "channel-id"}
+
 {"do": "put", "data": { "key" : "a key", "value" : "a value" }, "respond-to": "channel-id"} instructing the receipient node to store the given (key,value) pair in the appropriate ring node.
+
 {"do": "get", "data": { "key" : "a key" }, "respond-to": "channel-id"} instructing the receipient node to retrieve the value associated with the key stored in the ring.
+
 {"do": "remove", "data": { "key" : "a key" }, "respond-to": "channel-id"} instructing the receipient node to remove the (key,value) pair from the ring.
